@@ -1,1 +1,1 @@
-worker: main.py
+worker: python referral_bot.py
