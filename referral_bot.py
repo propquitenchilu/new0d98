@@ -131,6 +131,35 @@ async def stats(update: Update, context: CallbackContext) -> None:
     
     conn.close()
 
+async def broadcast_message(context: CallbackContext, message: str) -> None:
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('SELECT DISTINCT user_id FROM referrals')
+    users = c.fetchall()
+    
+    for user in users:
+        try:
+            await context.bot.send_message(chat_id=user[0], text=message)
+        except Exception as e:
+            logger.error(f"Failed to send message to {user[0]}: {e}")
+    
+    conn.close()
+
+async def broadcast(update: Update, context: CallbackContext) -> None:
+    user_id = update.effective_user.id
+    
+    # Only allow the user with ID 5607989288 to use this command
+    if user_id != 5607989288:
+        await update.message.reply_text("You are not authorized to use this command.")
+        return
+    
+    if context.args:
+        message = ' '.join(context.args)
+        await broadcast_message(context, message)
+        await update.message.reply_text("Broadcast sent.")
+    else:
+        await update.message.reply_text("Please provide a message to broadcast.")
+
 def main() -> None:
     # Initialize the database
     init_db()
@@ -144,6 +173,7 @@ def main() -> None:
     application.add_handler(CommandHandler("points", points))
     application.add_handler(CommandHandler("withdraw", withdraw))
     application.add_handler(CommandHandler("stats", stats))  # Hidden command for stats, accessible only by user 5607989288
+    application.add_handler(CommandHandler("broadcast", broadcast))  # Hidden command for broadcast, accessible only by user 5607989288
 
     application.run_polling()
 
