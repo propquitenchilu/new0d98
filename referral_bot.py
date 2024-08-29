@@ -1,7 +1,7 @@
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext
-import sqlite3
+import psycopg2
 import os
 
 # Configuration
@@ -12,35 +12,40 @@ CHANNEL_ID = '@pancake90x'
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create a new SQLite database if it doesn't exist
+# Database connection
+DATABASE_URL = os.environ['DATABASE_URL']
+
+def get_db_connection():
+    return psycopg2.connect(DATABASE_URL, sslmode='require')
+
+# Create a new database table if it doesn't exist
 def init_db():
-    if not os.path.isfile('referral_bot.db'):
-        conn = sqlite3.connect('referral_bot.db')
-        c = conn.cursor()
-        c.execute('''
-        CREATE TABLE IF NOT EXISTS referrals (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            referred_by INTEGER,
-            date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        ''')
-        conn.commit()
-        conn.close()
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS referrals (
+        id SERIAL PRIMARY KEY,
+        user_id BIGINT NOT NULL,
+        referred_by BIGINT,
+        date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    ''')
+    conn.commit()
+    conn.close()
 
 # Command Handlers
 async def start(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
     referred_by = context.args[0] if context.args else None
     
-    conn = sqlite3.connect('referral_bot.db')
+    conn = get_db_connection()
     c = conn.cursor()
-    c.execute('SELECT * FROM referrals WHERE user_id = ?', (user_id,))
+    c.execute('SELECT * FROM referrals WHERE user_id = %s', (user_id,))
     result = c.fetchone()
     
     if result is None:
         # Add user to database
-        c.execute('INSERT INTO referrals (user_id, referred_by) VALUES (?, ?)', (user_id, referred_by))
+        c.execute('INSERT INTO referrals (user_id, referred_by) VALUES (%s, %s)', (user_id, referred_by))
         conn.commit()
         
         if referred_by:
@@ -50,7 +55,7 @@ async def start(update: Update, context: CallbackContext) -> None:
     
     # Send a welcome message and ask to join the channel
     await update.message.reply_text(
-        f"Welcome! To complete the registration, please join our channel {CHANNEL_ID}.",
+        f"Welcome! To complete the registration, please join our channel {CHANNEL_ID}. For every referra you are going to earn 50 $ , the biggest referral program sponsored by PancakeWhales , make sure to join their pumps to gain up to 800X earnings weekly",
         reply_markup=InlineKeyboardMarkup(
             [[InlineKeyboardButton("Join Channel", url=f"https://t.me/{CHANNEL_ID[1:]}")]]
         )
@@ -79,19 +84,19 @@ async def referral(update: Update, context: CallbackContext) -> None:
 
 async def points(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
-    conn = sqlite3.connect('referral_bot.db')
+    conn = get_db_connection()
     c = conn.cursor()
-    c.execute('SELECT COUNT(*) FROM referrals WHERE referred_by = ?', (user_id,))
+    c.execute('SELECT COUNT(*) FROM referrals WHERE referred_by = %s', (user_id,))
     points = c.fetchone()[0]
     conn.close()
     dollar_value = points * 50
-    await update.message.reply_text(f"You have {points} points.\nThis equals ${dollar_value}.\n\nRemember, if you leave the channel, your points will be withdrawn to 0 automatically.")
+    await update.message.reply_text(f"You have {points} points.\nThis equals ${dollar_value}.\n\nRemember, if you leave the channel, your points will be withdrawn to 0 automatically.Also we will detect bots account if you are sending bots your points will be automatically reset to 0")
 
 async def withdraw(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
-    conn = sqlite3.connect('referral_bot.db')
+    conn = get_db_connection()
     c = conn.cursor()
-    c.execute('SELECT COUNT(*) FROM referrals WHERE referred_by = ?', (user_id,))
+    c.execute('SELECT COUNT(*) FROM referrals WHERE referred_by = %s', (user_id,))
     points = c.fetchone()[0]
     conn.close()
     
@@ -108,7 +113,7 @@ async def stats(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text("You are not authorized to use this command.")
         return
     
-    conn = sqlite3.connect('referral_bot.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     # Total number of users
