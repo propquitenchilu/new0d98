@@ -5,7 +5,7 @@ import psycopg2
 import os
 
 # Configuration
-TOKEN = '7494153356:AAFQo6RDU7o_Cjn88uVqmwTFyQZaqoOn25k'
+TOKEN = '7298768595:AAFEa7ojD-hevC5dRQXOWEEv2eMhfNmDQXY'
 CHANNEL_ID = '@pancake90x'
 
 # Logging configuration
