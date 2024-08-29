@@ -1,0 +1,11 @@
+# Ignore Python bytecode
+__pycache__/
+
+# Ignore virtual environment folder
+myenv/
+
+# Ignore SQLite database file
+*.db
+
+# Ignore other unwanted files
+*.log
