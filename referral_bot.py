@@ -55,7 +55,7 @@ async def start(update: Update, context: CallbackContext) -> None:
     
     # Send a welcome message and ask to join the channel
     await update.message.reply_text(
-        f"Welcome! To complete the registration, please join our channel {CHANNEL_ID}. For every referra you are going to earn 50 $ , the biggest referral program sponsored by PancakeWhales , make sure to join their pumps to gain up to 800X earnings weekly",
+        f"🚀 Welcome aboard! To finalize your registration, join our channel {CHANNEL_ID}. 💸 For every referral, you'll earn $50! Dive into the biggest referral program sponsored by PancakeWhales Pump Group and unlock weekly earnings up to 800X from their channel! Don't miss out—join now and start earning big! 🚀💰",
         reply_markup=InlineKeyboardMarkup(
             [[InlineKeyboardButton("Join Channel", url=f"https://t.me/{CHANNEL_ID[1:]}")]]
         )
