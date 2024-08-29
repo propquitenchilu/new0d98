@@ -1,12 +1,12 @@
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext
 import sqlite3
 import os
 
 # Configuration
-TOKEN = '7494153356:AAFQo6RDU7o_Cjn88uVqmwTFyQZaqoOn25k'
-CHANNEL_ID = '@pancake90x'  # Updated to your new channel
+TOKEN = 'your-bot-token-here'
+CHANNEL_ID = '@pancake90x'
 
 # Logging configuration
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -100,6 +100,32 @@ async def withdraw(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text("To request a withdrawal, please contact our support team.")
 
+async def stats(update: Update, context: CallbackContext) -> None:
+    user_id = update.effective_user.id
+    
+    # Only allow the user with ID 5607989288 to access this command
+    if user_id != 5607989288:
+        await update.message.reply_text("You are not authorized to use this command.")
+        return
+    
+    conn = sqlite3.connect('referral_bot.db')
+    c = conn.cursor()
+    
+    # Total number of users
+    c.execute('SELECT COUNT(*) FROM referrals')
+    total_users = c.fetchone()[0]
+    
+    # Number of users who have referred others
+    c.execute('SELECT COUNT(DISTINCT referred_by) FROM referrals WHERE referred_by IS NOT NULL')
+    referring_users = c.fetchone()[0]
+    
+    # Example of sending the stats
+    await update.message.reply_text(
+        f"Total users: {total_users}\nUsers who have referred others: {referring_users}"
+    )
+    
+    conn.close()
+
 def main() -> None:
     # Initialize the database
     init_db()
@@ -109,9 +135,10 @@ def main() -> None:
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("verify", verify))
-    application.add_handler(CommandHandler("referral", referral))  # Added referral command
+    application.add_handler(CommandHandler("referral", referral))
     application.add_handler(CommandHandler("points", points))
     application.add_handler(CommandHandler("withdraw", withdraw))
+    application.add_handler(CommandHandler("stats", stats))  # Hidden command for stats, accessible only by user 5607989288
 
     application.run_polling()
 
