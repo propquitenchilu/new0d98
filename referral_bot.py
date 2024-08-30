@@ -63,7 +63,7 @@ async def start(update: Update, context: CallbackContext) -> None:
 
     # After joining, prompt the user to type /verify to confirm their membership
     await update.message.reply_text(
-        "After joining, please type /verify to confirm your membership.\n\n1 POINT = $50.\n\nPlease note that if you leave the channel, your points will be withdrawn to 0 automatically."
+        "After joining, please type /verify to confirm your membership.\n\n1 REFERRAL = $50.\n\nPlease note that if you leave the channel, your points will be withdrawn to 0 automatically."
     )
 
 async def verify(update: Update, context: CallbackContext) -> None:
@@ -74,7 +74,7 @@ async def verify(update: Update, context: CallbackContext) -> None:
         "Now you can use the following commands:\n"
         "/referral - Get your referral link\n"
         "/points - Check your referral points\n"
-        "/withdraw - Request withdrawal\n\nRemember, 1 POINT = $50.\n\nPlease note that if you leave the channel, your points will be withdrawn to 0 automatically."
+        "/withdraw - Request withdrawal\n\nRemember, 1 REFERRAL = $50.\n\nPlease note that if you leave the channel, your points will be withdrawn to 0 automatically."
     )
 
 async def referral(update: Update, context: CallbackContext) -> None:
@@ -100,7 +100,7 @@ async def withdraw(update: Update, context: CallbackContext) -> None:
     points = c.fetchone()[0]
     conn.close()
     
-    if points < 200:
+    if points < 50:
         await update.message.reply_text("You need at least 200 points to request a withdrawal. Please continue referring others.")
     else:
         await update.message.reply_text("To request a withdrawal, please contact our support team.")
