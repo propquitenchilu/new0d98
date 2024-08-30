@@ -101,7 +101,7 @@ async def withdraw(update: Update, context: CallbackContext) -> None:
     conn.close()
     
     if points < 50:
-        await update.message.reply_text("You need at least 200 points to request a withdrawal. Please continue referring others.")
+        await update.message.reply_text("You need at least 50 referrals to request a withdrawal. Please continue referring others.")
     else:
         await update.message.reply_text("To request a withdrawal, please contact our support team.")
 
