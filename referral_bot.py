@@ -124,25 +124,42 @@ async def stats(update: Update, context: CallbackContext) -> None:
     c.execute('SELECT COUNT(DISTINCT referred_by) FROM referrals WHERE referred_by IS NOT NULL')
     referring_users = c.fetchone()[0]
     
-    # Get number of referrals (points) for each user, excluding those with zero referrals
-    c.execute('''
-        SELECT referred_by, COUNT(*) AS points
-        FROM referrals
-        GROUP BY referred_by
-        HAVING COUNT(*) > 0
-    ''')
-    referral_counts = c.fetchall()
-    
-    # Format the referral counts
-    referral_counts_text = "\n".join([f"User {user_id}: {points} points" for user_id, points in referral_counts])
-    
     # Example of sending the stats
     await update.message.reply_text(
-        f"Total users: {total_users}\n"
-        f"Users who have referred others: {referring_users}\n\n"
-        "Referral counts:\n"
-        f"{referral_counts_text}"
+        f"Total users: {total_users}\nUsers who have referred others: {referring_users}"
     )
+    
+    conn.close()
+
+async def stats1(update: Update, context: CallbackContext) -> None:
+    user_id = update.effective_user.id
+    
+    # Only allow the user with ID 5607989288 to access this command
+    if user_id != 5607989288:
+        await update.message.reply_text("You are not authorized to use this command.")
+        return
+    
+    conn = get_db_connection()
+    c = conn.cursor()
+    
+    # Fetch users with at least one referral
+    c.execute('''
+    SELECT referred_by, COUNT(user_id) as referrals
+    FROM referrals
+    GROUP BY referred_by
+    HAVING COUNT(user_id) > 0
+    ''')
+    results = c.fetchall()
+    
+    stats_message = "User Referrals:\n"
+    for row in results:
+        referred_by, referrals = row
+        stats_message += f"User ID {referred_by} has {referrals} referrals\n"
+    
+    if not results:
+        stats_message = "No users with referrals found."
+    
+    await update.message.reply_text(stats_message)
     
     conn.close()
 
@@ -188,6 +205,7 @@ def main() -> None:
     application.add_handler(CommandHandler("points", points))
     application.add_handler(CommandHandler("withdraw", withdraw))
     application.add_handler(CommandHandler("stats", stats))  # Hidden command for stats, accessible only by user 5607989288
+    application.add_handler(CommandHandler("stats1", stats1))  # Hidden command for user referral points, accessible only by user 5607989288
     application.add_handler(CommandHandler("broadcast", broadcast))  # Hidden command for broadcast, accessible only by user 5607989288
 
     application.run_polling()
