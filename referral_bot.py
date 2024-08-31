@@ -90,7 +90,7 @@ async def points(update: Update, context: CallbackContext) -> None:
     points = c.fetchone()[0]
     conn.close()
     dollar_value = points * 50
-    await update.message.reply_text(f"You have {points} points.\nThis equals ${dollar_value}.\n\nRemember, if you leave the channel, your points will be withdrawn to 0 automatically.Also we will detect bots account if you are sending bots your points will be automatically reset to 0")
+    await update.message.reply_text(f"You have {points} points.\nThis equals ${dollar_value}.\n\nRemember, if you leave the channel, your points will be withdrawn to 0 automatically. Also, we will detect bot accounts; if you are sending bots, your points will be automatically reset to 0.")
 
 async def withdraw(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
@@ -124,9 +124,24 @@ async def stats(update: Update, context: CallbackContext) -> None:
     c.execute('SELECT COUNT(DISTINCT referred_by) FROM referrals WHERE referred_by IS NOT NULL')
     referring_users = c.fetchone()[0]
     
+    # Get number of referrals (points) for each user, excluding those with zero referrals
+    c.execute('''
+        SELECT referred_by, COUNT(*) AS points
+        FROM referrals
+        GROUP BY referred_by
+        HAVING COUNT(*) > 0
+    ''')
+    referral_counts = c.fetchall()
+    
+    # Format the referral counts
+    referral_counts_text = "\n".join([f"User {user_id}: {points} points" for user_id, points in referral_counts])
+    
     # Example of sending the stats
     await update.message.reply_text(
-        f"Total users: {total_users}\nUsers who have referred others: {referring_users}"
+        f"Total users: {total_users}\n"
+        f"Users who have referred others: {referring_users}\n\n"
+        "Referral counts:\n"
+        f"{referral_counts_text}"
     )
     
     conn.close()
